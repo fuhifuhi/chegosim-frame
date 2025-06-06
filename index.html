@@ -2,9 +2,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>チェゴシム 落書きフレーム</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>チェゴシム フォトフレーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     html, body {
       margin: 0;
@@ -13,19 +13,12 @@
       font-family: sans-serif;
       text-align: center;
     }
-    h2 { margin: 0.5em; font-size: 1.4em; }
     #controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
       justify-content: center;
+      gap: 10px;
       padding: 10px;
-    }
-    select, button, input, label {
-      font-size: 1em;
-      padding: 0.4em;
-      border-radius: 6px;
-      border: none;
     }
     #container {
       position: relative;
@@ -34,13 +27,15 @@
       max-height: 90vh;
       margin: auto;
       background: black;
+      overflow: hidden;
     }
     video, #frameOverlay, canvas {
       position: absolute;
       width: 100%;
       height: 100%;
+      top: 0;
+      left: 0;
       object-fit: cover;
-      top: 0; left: 0;
     }
     .draggable-text {
       position: absolute;
@@ -49,14 +44,11 @@
       cursor: move;
       user-select: none;
       z-index: 20;
-      white-space: nowrap;
     }
-    canvas#finalCanvas { display: none; }
   </style>
 </head>
 <body>
-  <h2>📸 チェゴシム 落書きフレーム 📸</h2>
-
+  <h2>📸 チェゴシム 落書きフォトフレーム 📸</h2>
   <div id="controls">
     <select id="frameSelector">
       <option value="frame1.png">フレーム1</option>
@@ -64,130 +56,163 @@
       <option value="frame3.png">フレーム3</option>
       <option value="frame4.png">フレーム4</option>
     </select>
-
-    <button id="switchCam">🔄 カメラ切替</button>
-    <button id="snap">📷 シャッター</button>
+    <button id="switchCam">カメラ切替</button>
+    <button id="snap">シャッター</button>
+    <button id="drawToggle">🖊 手書きON</button>
     <input type="color" id="colorPicker" value="#ff69b4">
     <select id="fontSelector">
       <option value="sans-serif">ゴシック</option>
       <option value="serif">明朝</option>
       <option value="cursive">手書き風</option>
     </select>
-    <input type="text" id="textInput" placeholder="テキストを入力">
+    <input type="text" id="textInput" placeholder="テキストを入力" />
     <button id="addText">📌 テキスト配置</button>
     <a id="download" style="display:none; background:#64b5f6; color:white;">📥 保存</a>
   </div>
 
   <div id="container">
     <video id="camera" autoplay playsinline muted></video>
-    <img id="frameOverlay" src="frame1.png">
+    <img id="frameOverlay" src="frame1.png" />
     <canvas id="drawCanvas"></canvas>
-    <canvas id="finalCanvas" width="720" height="1280"></canvas>
+    <canvas id="finalCanvas" width="720" height="1280" style="display:none;"></canvas>
   </div>
 
-<script>
-const video = document.getElementById("camera");
-const frameOverlay = document.getElementById("frameOverlay");
-const drawCanvas = document.getElementById("drawCanvas");
-const finalCanvas = document.getElementById("finalCanvas");
-const ctxDraw = drawCanvas.getContext("2d");
-const ctxFinal = finalCanvas.getContext("2d");
-const container = document.getElementById("container");
+  <script>
+    const video = document.getElementById("camera");
+    const frameOverlay = document.getElementById("frameOverlay");
+    const drawCanvas = document.getElementById("drawCanvas");
+    const drawCtx = drawCanvas.getContext("2d");
+    const finalCanvas = document.getElementById("finalCanvas");
+    const finalCtx = finalCanvas.getContext("2d");
+    const container = document.getElementById("container");
 
-function resizeCanvas() {
-  drawCanvas.width = drawCanvas.offsetWidth;
-  drawCanvas.height = drawCanvas.offsetHeight;
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
-
-document.getElementById("frameSelector").addEventListener("change", e => {
-  frameOverlay.src = e.target.value;
-});
-document.getElementById("switchCam").addEventListener("click", () => {
-  currentFacing = currentFacing === "user" ? "environment" : "user";
-  startCamera(currentFacing);
-});
-document.getElementById("addText").addEventListener("click", () => {
-  const text = document.getElementById("textInput").value;
-  const color = document.getElementById("colorPicker").value;
-  const font = document.getElementById("fontSelector").value;
-  const div = document.createElement("div");
-  div.textContent = text;
-  div.className = "draggable-text";
-  div.style.color = color;
-  div.style.fontFamily = font;
-  div.style.left = "50%";
-  div.style.top = "50%";
-  div.style.transform = "translate(-50%, -50%)";
-  container.appendChild(div);
-
-  div.addEventListener("mousedown", function(e) {
-    let shiftX = e.clientX - div.getBoundingClientRect().left;
-    let shiftY = e.clientY - div.getBoundingClientRect().top;
-
-    function moveAt(pageX, pageY) {
-      div.style.left = pageX - shiftX + "px";
-      div.style.top = pageY - shiftY + "px";
-      div.style.transform = "translate(0,0)";
+    function resizeCanvas() {
+      drawCanvas.width = drawCanvas.offsetWidth;
+      drawCanvas.height = drawCanvas.offsetHeight;
     }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
 
-    function onMouseMove(e) {
-      moveAt(e.pageX, e.pageY);
-    }
-
-    document.addEventListener("mousemove", onMouseMove);
-    div.onmouseup = function() {
-      document.removeEventListener("mousemove", onMouseMove);
-      div.onmouseup = null;
-    };
-  });
-  div.ondragstart = () => false;
-});
-
-document.getElementById("snap").addEventListener("click", () => {
-  ctxFinal.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
-  const img = new Image();
-  img.onload = () => {
-    ctxFinal.drawImage(img, 0, 0, finalCanvas.width, finalCanvas.height);
-    ctxFinal.drawImage(drawCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
-
-    // テキスト描画
-    document.querySelectorAll(".draggable-text").forEach(txt => {
-      const rect = txt.getBoundingClientRect();
-      const contRect = container.getBoundingClientRect();
-      const x = rect.left - contRect.left;
-      const y = rect.top - contRect.top;
-      ctxFinal.font = `24px ${txt.style.fontFamily}`;
-      ctxFinal.fillStyle = txt.style.color;
-      ctxFinal.fillText(txt.textContent, x, y);
+    document.getElementById("frameSelector").addEventListener("change", e => {
+      frameOverlay.src = e.target.value;
     });
 
-    const link = document.getElementById("download");
-    link.href = finalCanvas.toDataURL("image/png");
-    link.download = "chegosim_frame_edited.png";
-    link.style.display = "inline";
-  };
-  img.src = frameOverlay.src;
-});
-
-let currentFacing = "user";
-async function startCamera(facingMode) {
-  if (window.stream) {
-    window.stream.getTracks().forEach(track => track.stop());
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingMode, aspectRatio: 9/16 },
-      audio: false
+    document.getElementById("switchCam").addEventListener("click", () => {
+      currentFacing = currentFacing === "user" ? "environment" : "user";
+      startCamera(currentFacing);
     });
-    window.stream = stream;
-    video.srcObject = stream;
-  } catch (err) {
-    alert("カメラエラー: " + err.message);
-  }
-}
-startCamera(currentFacing);
-</script>
+
+    document.getElementById("drawToggle").addEventListener("click", () => {
+      drawing = !drawing;
+      document.getElementById("drawToggle").innerText = drawing ? "🖊 手書きOFF" : "🖊 手書きON";
+    });
+
+    document.getElementById("addText").addEventListener("click", () => {
+      const text = document.getElementById("textInput").value;
+      const color = document.getElementById("colorPicker").value;
+      const font = document.getElementById("fontSelector").value;
+      const div = document.createElement("div");
+      div.className = "draggable-text";
+      div.textContent = text;
+      div.style.left = "50%";
+      div.style.top = "50%";
+      div.style.transform = "translate(-50%, -50%)";
+      div.style.color = color;
+      div.style.fontFamily = font;
+      container.appendChild(div);
+
+      function dragElement(el) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        el.onmousedown = dragMouseDown;
+        function dragMouseDown(e) {
+          e.preventDefault();
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          document.onmouseup = closeDragElement;
+          document.onmousemove = elementDrag;
+        }
+        function elementDrag(e) {
+          e.preventDefault();
+          pos1 = pos3 - e.clientX;
+          pos2 = pos4 - e.clientY;
+          pos3 = e.clientX;
+          pos4 = e.clientY;
+          el.style.top = (el.offsetTop - pos2) + "px";
+          el.style.left = (el.offsetLeft - pos1) + "px";
+          el.style.transform = "none";
+        }
+        function closeDragElement() {
+          document.onmouseup = null;
+          document.onmousemove = null;
+        }
+      }
+      dragElement(div);
+    });
+
+    document.getElementById("snap").addEventListener("click", () => {
+      finalCtx.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
+      const img = new Image();
+      img.onload = () => {
+        finalCtx.drawImage(img, 0, 0, finalCanvas.width, finalCanvas.height);
+        finalCtx.drawImage(drawCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+        document.querySelectorAll(".draggable-text").forEach(txt => {
+          const r = txt.getBoundingClientRect();
+          const c = container.getBoundingClientRect();
+          const x = r.left - c.left;
+          const y = r.top - c.top;
+          finalCtx.font = `24px ${txt.style.fontFamily}`;
+          finalCtx.fillStyle = txt.style.color;
+          finalCtx.fillText(txt.textContent, x, y);
+        });
+        const link = document.getElementById("download");
+        link.href = finalCanvas.toDataURL("image/png");
+        link.download = "chegosim_frame_edited.png";
+        link.style.display = "inline";
+      };
+      img.src = frameOverlay.src;
+    });
+
+    let drawing = false;
+    let currentColor = "#ff69b4";
+    document.getElementById("colorPicker").addEventListener("change", e => {
+      currentColor = e.target.value;
+    });
+
+    drawCanvas.addEventListener("mousedown", e => {
+      if (!drawing) return;
+      drawCtx.beginPath();
+      drawCtx.moveTo(e.offsetX, e.offsetY);
+      drawCanvas.addEventListener("mousemove", draw);
+    });
+
+    drawCanvas.addEventListener("mouseup", () => {
+      drawCanvas.removeEventListener("mousemove", draw);
+    });
+
+    function draw(e) {
+      drawCtx.lineWidth = 3;
+      drawCtx.strokeStyle = currentColor;
+      drawCtx.lineTo(e.offsetX, e.offsetY);
+      drawCtx.stroke();
+    }
+
+    let currentFacing = "user";
+    async function startCamera(facingMode) {
+      if (window.stream) {
+        window.stream.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode, aspectRatio: 9/16 },
+          audio: false
+        });
+        window.stream = stream;
+        video.srcObject = stream;
+      } catch (err) {
+        alert("カメラエラー: " + err.message);
+      }
+    }
+    startCamera(currentFacing);
+  </script>
 </body>
 </html>
