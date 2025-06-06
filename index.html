@@ -42,8 +42,14 @@
       object-fit: cover;
       top: 0; left: 0;
     }
-    #drawCanvas {
-      z-index: 10;
+    .draggable-text {
+      position: absolute;
+      color: white;
+      font-size: 24px;
+      cursor: move;
+      user-select: none;
+      z-index: 20;
+      white-space: nowrap;
     }
     canvas#finalCanvas { display: none; }
   </style>
@@ -61,8 +67,6 @@
 
     <button id="switchCam">🔄 カメラ切替</button>
     <button id="snap">📷 シャッター</button>
-    <button id="penToggle">🖊 手書きON</button>
-
     <input type="color" id="colorPicker" value="#ff69b4">
     <select id="fontSelector">
       <option value="sans-serif">ゴシック</option>
@@ -88,10 +92,7 @@ const drawCanvas = document.getElementById("drawCanvas");
 const finalCanvas = document.getElementById("finalCanvas");
 const ctxDraw = drawCanvas.getContext("2d");
 const ctxFinal = finalCanvas.getContext("2d");
-
-let currentFacing = "user";
-let drawing = false;
-let penEnabled = false;
+const container = document.getElementById("container");
 
 function resizeCanvas() {
   drawCanvas.width = drawCanvas.offsetWidth;
@@ -100,18 +101,6 @@ function resizeCanvas() {
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
 
-drawCanvas.addEventListener("mousedown", e => { if (penEnabled) { drawing = true; ctxDraw.beginPath(); }});
-drawCanvas.addEventListener("mouseup", () => drawing = false);
-drawCanvas.addEventListener("mousemove", e => {
-  if (drawing && penEnabled) {
-    const r = drawCanvas.getBoundingClientRect();
-    ctxDraw.strokeStyle = document.getElementById("colorPicker").value;
-    ctxDraw.lineWidth = 3;
-    ctxDraw.lineTo(e.clientX - r.left, e.clientY - r.top);
-    ctxDraw.stroke();
-  }
-});
-
 document.getElementById("frameSelector").addEventListener("change", e => {
   frameOverlay.src = e.target.value;
 });
@@ -119,16 +108,41 @@ document.getElementById("switchCam").addEventListener("click", () => {
   currentFacing = currentFacing === "user" ? "environment" : "user";
   startCamera(currentFacing);
 });
-document.getElementById("penToggle").addEventListener("click", () => {
-  penEnabled = !penEnabled;
-  document.getElementById("penToggle").textContent = penEnabled ? "🖊 手書きOFF" : "🖊 手書きON";
-});
 document.getElementById("addText").addEventListener("click", () => {
-  const txt = document.getElementById("textInput").value;
+  const text = document.getElementById("textInput").value;
+  const color = document.getElementById("colorPicker").value;
   const font = document.getElementById("fontSelector").value;
-  ctxDraw.font = `24px ${font}`;
-  ctxDraw.fillStyle = document.getElementById("colorPicker").value;
-  ctxDraw.fillText(txt, 30, 40 + Math.random() * 300);
+  const div = document.createElement("div");
+  div.textContent = text;
+  div.className = "draggable-text";
+  div.style.color = color;
+  div.style.fontFamily = font;
+  div.style.left = "50%";
+  div.style.top = "50%";
+  div.style.transform = "translate(-50%, -50%)";
+  container.appendChild(div);
+
+  div.addEventListener("mousedown", function(e) {
+    let shiftX = e.clientX - div.getBoundingClientRect().left;
+    let shiftY = e.clientY - div.getBoundingClientRect().top;
+
+    function moveAt(pageX, pageY) {
+      div.style.left = pageX - shiftX + "px";
+      div.style.top = pageY - shiftY + "px";
+      div.style.transform = "translate(0,0)";
+    }
+
+    function onMouseMove(e) {
+      moveAt(e.pageX, e.pageY);
+    }
+
+    document.addEventListener("mousemove", onMouseMove);
+    div.onmouseup = function() {
+      document.removeEventListener("mousemove", onMouseMove);
+      div.onmouseup = null;
+    };
+  });
+  div.ondragstart = () => false;
 });
 
 document.getElementById("snap").addEventListener("click", () => {
@@ -137,6 +151,18 @@ document.getElementById("snap").addEventListener("click", () => {
   img.onload = () => {
     ctxFinal.drawImage(img, 0, 0, finalCanvas.width, finalCanvas.height);
     ctxFinal.drawImage(drawCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+
+    // テキスト描画
+    document.querySelectorAll(".draggable-text").forEach(txt => {
+      const rect = txt.getBoundingClientRect();
+      const contRect = container.getBoundingClientRect();
+      const x = rect.left - contRect.left;
+      const y = rect.top - contRect.top;
+      ctxFinal.font = `24px ${txt.style.fontFamily}`;
+      ctxFinal.fillStyle = txt.style.color;
+      ctxFinal.fillText(txt.textContent, x, y);
+    });
+
     const link = document.getElementById("download");
     link.href = finalCanvas.toDataURL("image/png");
     link.download = "chegosim_frame_edited.png";
@@ -145,6 +171,7 @@ document.getElementById("snap").addEventListener("click", () => {
   img.src = frameOverlay.src;
 });
 
+let currentFacing = "user";
 async function startCamera(facingMode) {
   if (window.stream) {
     window.stream.getTracks().forEach(track => track.stop());
@@ -160,7 +187,6 @@ async function startCamera(facingMode) {
     alert("カメラエラー: " + err.message);
   }
 }
-
 startCamera(currentFacing);
 </script>
 </body>
