@@ -5,84 +5,34 @@ let context = canvas.getContext('2d');
 let drawMode = false;
 let currentStream = null;
 
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(stream => {
-  currentStream = stream;
-  video.srcObject = stream;
-});
+function initCamera(facing = 'user') {
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } }).then(stream => {
+    currentStream = stream;
+    video.srcObject = stream;
+    video.dataset.facing = facing;
+  });
+}
 
 function switchCamera() {
   if (currentStream) {
     currentStream.getTracks().forEach(track => track.stop());
   }
-  let facing = video.dataset.facing === 'user' ? 'environment' : 'user';
-  video.dataset.facing = facing;
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } }).then(stream => {
-    currentStream = stream;
-    video.srcObject = stream;
-  });
-}
-
-function takePhoto() {
-  let capture = document.createElement('canvas');
-  capture.width = video.videoWidth;
-  capture.height = video.videoHeight;
-  let ctx = capture.getContext('2d');
-  ctx.drawImage(video, 0, 0, capture.width, capture.height);
-  ctx.drawImage(canvas, 0, 0);
-  let frame = document.getElementById('frameImage');
-  ctx.drawImage(frame, 0, 0, capture.width, capture.height);
-  let textEl = document.getElementById('textOverlay');
-  if (textEl.innerText) {
-    ctx.font = window.getComputedStyle(textEl).font;
-    ctx.fillStyle = textEl.style.color;
-    ctx.textAlign = 'center';
-    ctx.fillText(textEl.innerText, capture.width / 2, capture.height / 2);
-  }
-  let a = document.createElement('a');
-  a.href = capture.toDataURL('image/png');
-  a.download = 'chegosim_photo.png';
-  a.click();
+  let newFacing = video.dataset.facing === 'user' ? 'environment' : 'user';
+  initCamera(newFacing);
 }
 
 function toggleDraw() {
   drawMode = !drawMode;
   canvas.style.pointerEvents = drawMode ? 'auto' : 'none';
-  document.querySelector('button[onclick="toggleDraw()"]').innerText = drawMode ? '✏️ 手書きON' : '✏️ 手書きOFF';
-}
-
-canvas.addEventListener('mousedown', e => {
-  if (!drawMode) return;
-  context.beginPath();
-  context.moveTo(e.offsetX, e.offsetY);
-  canvas.addEventListener('mousemove', draw);
-});
-
-canvas.addEventListener('mouseup', e => {
-  if (!drawMode) return;
-  canvas.removeEventListener('mousemove', draw);
-});
-
-function draw(e) {
-  context.lineTo(e.offsetX, e.offsetY);
-  context.strokeStyle = document.getElementById('penColor').value;
-  context.lineWidth = 3;
-  context.stroke();
+  event.target.innerText = drawMode ? '✏️ 手書きON' : '✏️ 手書きOFF';
 }
 
 function placeText() {
   let text = document.getElementById('textInput').value;
-  let overlay = document.getElementById('textOverlay');
-  overlay.innerText = text;
-  overlay.style.pointerEvents = 'auto';
-  overlay.setAttribute('draggable', true);
+  let el = document.getElementById('textOverlay');
+  el.innerText = text || '';
+  el.style.color = document.getElementById('penColor').value;
 }
-
-document.getElementById('textOverlay').addEventListener('touchmove', function (e) {
-  let touch = e.touches[0];
-  this.style.left = touch.pageX + 'px';
-  this.style.top = touch.pageY + 'px';
-  this.style.transform = 'translate(-50%, -50%)';
-});
 
 function adjustFontSize(size) {
   document.getElementById('textOverlay').style.fontSize = size + 'px';
@@ -91,3 +41,66 @@ function adjustFontSize(size) {
 document.getElementById('frameSelect').addEventListener('change', function () {
   document.getElementById('frameImage').src = this.value;
 });
+
+let moving = false;
+document.getElementById('textOverlay').addEventListener('touchstart', function (e) {
+  moving = true;
+});
+document.getElementById('textOverlay').addEventListener('touchmove', function (e) {
+  if (!moving) return;
+  let t = e.touches[0];
+  this.style.left = t.pageX + 'px';
+  this.style.top = t.pageY + 'px';
+  this.style.transform = 'translate(-50%, -50%)';
+});
+document.getElementById('textOverlay').addEventListener('touchend', () => moving = false);
+
+canvas.addEventListener('touchstart', e => {
+  if (!drawMode) return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  context.beginPath();
+  context.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+});
+canvas.addEventListener('touchmove', e => {
+  if (!drawMode) return;
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.touches[0];
+  context.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+  context.strokeStyle = document.getElementById('penColor').value;
+  context.lineWidth = 3;
+  context.stroke();
+});
+
+function takePhoto() {
+  let capture = document.createElement('canvas');
+  capture.width = video.videoWidth;
+  capture.height = video.videoHeight;
+  let ctx = capture.getContext('2d');
+  ctx.drawImage(video, 0, 0, capture.width, capture.height);
+  ctx.drawImage(canvas, 0, 0, capture.width, capture.height);
+  let frame = document.getElementById('frameImage');
+  ctx.drawImage(frame, 0, 0, capture.width, capture.height);
+
+  let textEl = document.getElementById('textOverlay');
+  if (textEl.innerText) {
+    ctx.font = window.getComputedStyle(textEl).font;
+    ctx.fillStyle = textEl.style.color;
+    ctx.textAlign = 'center';
+    let rect = textEl.getBoundingClientRect();
+    let x = rect.left + rect.width / 2;
+    let y = rect.top + rect.height / 2;
+    x *= capture.width / window.innerWidth;
+    y *= capture.height / window.innerHeight;
+    ctx.fillText(textEl.innerText, x, y);
+  }
+
+  let a = document.createElement('a');
+  a.href = capture.toDataURL('image/png');
+  a.download = 'chegosim_photo.png';
+  a.click();
+}
+
+initCamera();

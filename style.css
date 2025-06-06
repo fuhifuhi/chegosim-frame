@@ -1,45 +1,48 @@
 
-body, html {
+body {
   margin: 0;
-  padding: 0;
-  overflow: hidden;
+  background: black;
+  color: white;
   font-family: sans-serif;
+  overflow: hidden;
+}
+#container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: black;
 }
 video, canvas, #frameImage {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-}
-#frameImage {
-  pointer-events: none;
-  z-index: 10;
-}
-#overlay {
-  z-index: 11;
 }
 #textOverlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #ffffff;
-  font-size: 24px;
+  color: white;
+  font-size: 32px;
   font-weight: bold;
-  z-index: 12;
+  text-shadow: 1px 1px 3px black;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   user-select: none;
+  touch-action: none;
 }
 #controls {
   position: fixed;
   bottom: 0;
   width: 100%;
-  background: rgba(255,255,255,0.9);
-  padding: 10px;
+  background: #eee;
+  color: black;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  z-index: 999;
+  gap: 6px;
+  padding: 6px;
+  box-shadow: 0 -1px 5px rgba(0,0,0,0.3);
+}
+canvas {
+  touch-action: none;
 }
