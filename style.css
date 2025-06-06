@@ -1,37 +1,43 @@
 
 body {
-  background: #000;
+  background: black;
   color: white;
-  text-align: center;
   font-family: sans-serif;
+  text-align: center;
+  margin: 0;
 }
-#cameraContainer {
+.controls {
+  margin: 10px;
+}
+.camera-container {
   position: relative;
   display: inline-block;
 }
-#camera, #overlay, #frameImage {
+video, canvas, img {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
-  max-width: 360px;
+  height: auto;
+  max-width: 90vw;
 }
-#frameImage {
-  z-index: 2;
+#camera {
+  z-index: 1;
 }
 #overlay {
+  z-index: 2;
+}
+#frameImage {
   z-index: 3;
 }
 #textOverlay {
-  position: absolute;
   z-index: 4;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: absolute;
   color: hotpink;
-  font-size: 24px;
+  font-size: 36px;
+  font-weight: bold;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   pointer-events: none;
-}
-.controls {
-  margin-bottom: 1em;
 }

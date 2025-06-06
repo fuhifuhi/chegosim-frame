@@ -56,38 +56,34 @@ canvas.addEventListener('mousedown', e => {
   context.moveTo(e.offsetX, e.offsetY);
   canvas.addEventListener('mousemove', draw);
 });
-
-canvas.addEventListener('mouseup', e => {
+canvas.addEventListener('mouseup', () => {
   if (!drawMode) return;
   canvas.removeEventListener('mousemove', draw);
 });
-
 function draw(e) {
   context.lineTo(e.offsetX, e.offsetY);
   context.strokeStyle = document.getElementById('penColor').value;
   context.lineWidth = 3;
   context.stroke();
 }
-
 function placeText() {
   let text = document.getElementById('textInput').value;
   let overlay = document.getElementById('textOverlay');
   overlay.innerText = text;
   overlay.style.pointerEvents = 'auto';
-  overlay.setAttribute('draggable', true);
 }
-
 document.getElementById('textOverlay').addEventListener('touchmove', function (e) {
   let touch = e.touches[0];
   this.style.left = touch.pageX + 'px';
   this.style.top = touch.pageY + 'px';
   this.style.transform = 'translate(-50%, -50%)';
 });
-
 function adjustFontSize(size) {
   document.getElementById('textOverlay').style.fontSize = size + 'px';
 }
-
+function downloadImage() {
+  takePhoto();
+}
 document.getElementById('frameSelect').addEventListener('change', function () {
   document.getElementById('frameImage').src = this.value;
 });
