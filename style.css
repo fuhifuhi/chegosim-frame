@@ -1,47 +1,47 @@
 body {
   margin: 0;
+  font-family: sans-serif;
   background: black;
   color: white;
-  font-family: sans-serif;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+  text-align: center;
 }
-#camera-container {
+#cameraContainer {
   position: relative;
-  flex: 1;
-  overflow: hidden;
+  display: inline-block;
 }
-video, canvas, #frameImage {
+#camera, #overlay, #frameImage {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: auto;
+  max-height: 90vh;
+  object-fit: contain;
 }
 #overlay {
+  z-index: 2;
+}
+#frameImage {
   z-index: 3;
   pointer-events: none;
 }
-#frameImage {
-  z-index: 2;
-}
 #textOverlay {
   position: absolute;
+  z-index: 4;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 24px;
+  font-size: 32px;
   color: hotpink;
-  z-index: 4;
   user-select: none;
+  pointer-events: none;
 }
 #controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px;
-  padding: 8px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
   background: #111;
-  z-index: 5;
+  padding: 10px;
+  box-sizing: border-box;
+  z-index: 10;
 }
