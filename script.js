@@ -1,3 +1,4 @@
+
 let video = document.getElementById('camera');
 let canvas = document.getElementById('overlay');
 let context = canvas.getContext('2d');
@@ -49,30 +50,20 @@ function toggleDraw() {
   document.querySelector('button[onclick="toggleDraw()"]').innerText = drawMode ? '✏️ 手書きON' : '✏️ 手書きOFF';
 }
 
-canvas.addEventListener('touchstart', startDraw, false);
-canvas.addEventListener('touchmove', drawTouch, false);
 canvas.addEventListener('mousedown', e => {
   if (!drawMode) return;
   context.beginPath();
   context.moveTo(e.offsetX, e.offsetY);
   canvas.addEventListener('mousemove', draw);
 });
-canvas.addEventListener('mouseup', () => {
+
+canvas.addEventListener('mouseup', e => {
   if (!drawMode) return;
   canvas.removeEventListener('mousemove', draw);
 });
-function startDraw(e) {
-  if (!drawMode) return;
-  let touch = e.touches[0];
-  let rect = canvas.getBoundingClientRect();
-  context.beginPath();
-  context.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-}
-function drawTouch(e) {
-  if (!drawMode) return;
-  let touch = e.touches[0];
-  let rect = canvas.getBoundingClientRect();
-  context.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+
+function draw(e) {
+  context.lineTo(e.offsetX, e.offsetY);
   context.strokeStyle = document.getElementById('penColor').value;
   context.lineWidth = 3;
   context.stroke();
@@ -82,7 +73,6 @@ function placeText() {
   let text = document.getElementById('textInput').value;
   let overlay = document.getElementById('textOverlay');
   overlay.innerText = text;
-  overlay.style.display = text ? 'block' : 'none';
   overlay.style.pointerEvents = 'auto';
   overlay.setAttribute('draggable', true);
 }
@@ -93,12 +83,11 @@ document.getElementById('textOverlay').addEventListener('touchmove', function (e
   this.style.top = touch.pageY + 'px';
   this.style.transform = 'translate(-50%, -50%)';
 });
+
 function adjustFontSize(size) {
   document.getElementById('textOverlay').style.fontSize = size + 'px';
 }
+
 document.getElementById('frameSelect').addEventListener('change', function () {
   document.getElementById('frameImage').src = this.value;
 });
-function download() {
-  takePhoto();
-}
