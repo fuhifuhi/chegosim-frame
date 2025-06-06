@@ -4,18 +4,42 @@
 <head>
   <meta charset="UTF-8">
   <title>チェゴシム フォトフレーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
       background: #000;
-      text-align: center;
       color: white;
       font-family: sans-serif;
+      text-align: center;
+    }
+    h2 {
+      font-size: 1.5em;
+      margin: 0.5em 0;
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px;
+    }
+    select, button, a {
+      font-size: 1.1em;
+      padding: 0.5em 1em;
+      border: none;
+      border-radius: 8px;
+      background-color: #f06292;
+      color: white;
+    }
+    a {
+      text-decoration: none;
+      background-color: #64b5f6;
     }
     #container {
       position: relative;
       width: 100vw;
-      height: calc(100vw * 1.78); /* 縦長比率 9:16 */
+      height: calc(100vw * 1.78);
       max-height: 90vh;
       margin: auto;
       overflow: hidden;
@@ -27,9 +51,6 @@
       object-fit: cover;
       top: 0;
       left: 0;
-    }
-    #controls {
-      margin: 10px;
     }
     canvas {
       display: none;
@@ -45,6 +66,7 @@
       <option value="frame3.png">フレーム3</option>
       <option value="frame4.png">フレーム4</option>
     </select>
+    <button id="switchCam">🔄 カメラ切替</button>
     <button id="snap">📷 シャッター</button>
     <a id="download" style="display:none">📥 画像を保存</a>
   </div>
@@ -60,19 +82,31 @@
     const frameOverlay = document.getElementById("frameOverlay");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
+    let currentFacing = "user";
 
-    // カメラ起動（縦長用アスペクト）
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "user", aspectRatio: 9/16 },
-      audio: false
-    }).then(stream => {
-      video.srcObject = stream;
-    }).catch(err => {
-      alert("カメラにアクセスできません: " + err);
-    });
+    async function startCamera(facingMode) {
+      if (window.stream) {
+        window.stream.getTracks().forEach(track => track.stop());
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode, aspectRatio: 9/16 },
+          audio: false
+        });
+        window.stream = stream;
+        video.srcObject = stream;
+      } catch (err) {
+        alert("カメラエラー: " + err.message);
+      }
+    }
 
     document.getElementById("frameSelector").addEventListener("change", e => {
       frameOverlay.src = e.target.value;
+    });
+
+    document.getElementById("switchCam").addEventListener("click", () => {
+      currentFacing = currentFacing === "user" ? "environment" : "user";
+      startCamera(currentFacing);
     });
 
     document.getElementById("snap").addEventListener("click", () => {
@@ -89,6 +123,8 @@
       };
       img.src = frameOverlay.src;
     });
+
+    startCamera(currentFacing);
   </script>
 </body>
 </html>
