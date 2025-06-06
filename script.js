@@ -1,4 +1,3 @@
-
 let video = document.getElementById('camera');
 let canvas = document.getElementById('overlay');
 let context = canvas.getContext('2d');
@@ -11,9 +10,7 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(stre
 });
 
 function switchCamera() {
-  if (currentStream) {
-    currentStream.getTracks().forEach(track => track.stop());
-  }
+  if (currentStream) currentStream.getTracks().forEach(track => track.stop());
   let facing = video.dataset.facing === 'user' ? 'environment' : 'user';
   video.dataset.facing = facing;
   navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } }).then(stream => {
@@ -28,9 +25,9 @@ function takePhoto() {
   capture.height = video.videoHeight;
   let ctx = capture.getContext('2d');
   ctx.drawImage(video, 0, 0, capture.width, capture.height);
-  ctx.drawImage(canvas, 0, 0);
-  let frame = document.getElementById('frameImage');
-  ctx.drawImage(frame, 0, 0, capture.width, capture.height);
+  ctx.drawImage(canvas, 0, 0, capture.width, capture.height);
+  ctx.drawImage(document.getElementById('frameImage'), 0, 0, capture.width, capture.height);
+
   let textEl = document.getElementById('textOverlay');
   if (textEl.innerText) {
     ctx.font = window.getComputedStyle(textEl).font;
@@ -38,6 +35,7 @@ function takePhoto() {
     ctx.textAlign = 'center';
     ctx.fillText(textEl.innerText, capture.width / 2, capture.height / 2);
   }
+
   let a = document.createElement('a');
   a.href = capture.toDataURL('image/png');
   a.download = 'chegosim_photo.png';
@@ -56,34 +54,35 @@ canvas.addEventListener('mousedown', e => {
   context.moveTo(e.offsetX, e.offsetY);
   canvas.addEventListener('mousemove', draw);
 });
-canvas.addEventListener('mouseup', () => {
-  if (!drawMode) return;
-  canvas.removeEventListener('mousemove', draw);
-});
+canvas.addEventListener('mouseup', () => canvas.removeEventListener('mousemove', draw));
 function draw(e) {
   context.lineTo(e.offsetX, e.offsetY);
   context.strokeStyle = document.getElementById('penColor').value;
   context.lineWidth = 3;
   context.stroke();
 }
+
 function placeText() {
   let text = document.getElementById('textInput').value;
   let overlay = document.getElementById('textOverlay');
   overlay.innerText = text;
-  overlay.style.pointerEvents = 'auto';
 }
+
 document.getElementById('textOverlay').addEventListener('touchmove', function (e) {
   let touch = e.touches[0];
   this.style.left = touch.pageX + 'px';
   this.style.top = touch.pageY + 'px';
   this.style.transform = 'translate(-50%, -50%)';
 });
+
 function adjustFontSize(size) {
   document.getElementById('textOverlay').style.fontSize = size + 'px';
 }
-function downloadImage() {
-  takePhoto();
-}
+
 document.getElementById('frameSelect').addEventListener('change', function () {
   document.getElementById('frameImage').src = this.value;
 });
+
+function downloadImage() {
+  takePhoto();
+}

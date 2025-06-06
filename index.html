@@ -1,40 +1,37 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>📸 チェゴシム 落書きフレーム 📸</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>📸 チェゴシム 落書きフレーム 📸</h1>
-  <div class="controls">
+  <div id="camera-container">
+    <video id="camera" autoplay playsinline></video>
+    <img id="frameImage" src="frame1.png">
+    <canvas id="overlay"></canvas>
+    <div id="textOverlay">テキスト</div>
+  </div>
+  <div id="controls">
     <select id="frameSelect">
       <option value="frame1.png">フレーム1</option>
       <option value="frame2.png">フレーム2</option>
       <option value="frame3.png">フレーム3</option>
       <option value="frame4.png">フレーム4</option>
     </select>
-    <button onclick="switchCamera()">📷 カメラ切替</button>
+    <button onclick="switchCamera()">カメラ切替</button>
     <button onclick="takePhoto()">📸 シャッター</button>
     <button onclick="toggleDraw()">✏️ 手書きOFF</button>
     <select id="penColor">
       <option value="hotpink">手書き風</option>
-      <option value="white">白</option>
       <option value="black">黒</option>
-      <option value="deeppink">ピンク</option>
-      <option value="aqua">ミント</option>
+      <option value="white">白</option>
     </select>
     <input id="textInput" placeholder="コメントを入力">
     <button onclick="placeText()">📌 テキスト配置</button>
-    <input type="range" min="10" max="80" value="36" oninput="adjustFontSize(this.value)">
+    <input type="range" min="12" max="60" value="24" oninput="adjustFontSize(this.value)">
     <button onclick="downloadImage()">💾 ダウンロード</button>
-  </div>
-  <div class="camera-container">
-    <video id="camera" autoplay playsinline></video>
-    <canvas id="overlay"></canvas>
-    <img id="frameImage" src="frame1.png">
-    <div id="textOverlay">テキスト</div>
   </div>
   <script src="script.js"></script>
 </body>

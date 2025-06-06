@@ -1,43 +1,47 @@
-
 body {
+  margin: 0;
   background: black;
   color: white;
   font-family: sans-serif;
-  text-align: center;
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
-.controls {
-  margin: 10px;
-}
-.camera-container {
+#camera-container {
   position: relative;
-  display: inline-block;
+  flex: 1;
+  overflow: hidden;
 }
-video, canvas, img {
+video, canvas, #frameImage {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0; left: 0;
   width: 100%;
-  height: auto;
-  max-width: 90vw;
-}
-#camera {
-  z-index: 1;
+  height: 100%;
+  object-fit: cover;
 }
 #overlay {
-  z-index: 2;
+  z-index: 3;
+  pointer-events: none;
 }
 #frameImage {
-  z-index: 3;
+  z-index: 2;
 }
 #textOverlay {
-  z-index: 4;
   position: absolute;
-  color: hotpink;
-  font-size: 36px;
-  font-weight: bold;
-  left: 50%;
   top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
-  pointer-events: none;
+  font-size: 24px;
+  color: hotpink;
+  z-index: 4;
+  user-select: none;
+}
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  background: #111;
+  z-index: 5;
 }
