@@ -5,20 +5,34 @@
   <meta charset="UTF-8">
   <title>チェゴシム フォトフレーム</title>
   <style>
-    body { margin: 0; background: #000; text-align: center; color: white; font-family: sans-serif; }
-    video, canvas, img { max-width: 100vw; max-height: 80vh; }
-    #controls { margin: 10px; }
-    #frameOverlay {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      object-fit: contain;
-      pointer-events: none;
-      z-index: 2;
+    body {
+      margin: 0;
+      background: #000;
+      text-align: center;
+      color: white;
+      font-family: sans-serif;
     }
     #container {
       position: relative;
+      width: 100vw;
+      height: calc(100vw * 1.78); /* 縦長比率 9:16 */
+      max-height: 90vh;
+      margin: auto;
+      overflow: hidden;
+    }
+    video, #frameOverlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      top: 0;
+      left: 0;
+    }
+    #controls {
+      margin: 10px;
+    }
+    canvas {
+      display: none;
     }
   </style>
 </head>
@@ -32,12 +46,13 @@
       <option value="frame4.png">フレーム4</option>
     </select>
     <button id="snap">📷 シャッター</button>
-    <a id="download" style="display:none">📥 ダウンロード</a>
+    <a id="download" style="display:none">📥 画像を保存</a>
   </div>
+
   <div id="container">
     <video id="camera" autoplay playsinline muted></video>
     <img id="frameOverlay" src="frame1.png">
-    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <canvas id="canvas" width="720" height="1280"></canvas>
   </div>
 
   <script>
@@ -46,31 +61,33 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    // カメラ起動
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then(stream => { video.srcObject = stream; })
-      .catch(err => { alert("カメラにアクセスできません: " + err); });
+    // カメラ起動（縦長用アスペクト）
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "user", aspectRatio: 9/16 },
+      audio: false
+    }).then(stream => {
+      video.srcObject = stream;
+    }).catch(err => {
+      alert("カメラにアクセスできません: " + err);
+    });
 
-    // フレーム切り替え
     document.getElementById("frameSelector").addEventListener("change", e => {
       frameOverlay.src = e.target.value;
     });
 
-    // シャッターと保存
     document.getElementById("snap").addEventListener("click", () => {
       canvas.style.display = "block";
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const img = new Image();
-      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      img.src = frameOverlay.src;
-
-      setTimeout(() => {
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         const link = document.getElementById("download");
         link.href = canvas.toDataURL("image/png");
         link.download = "chegosim_frame.png";
         link.style.display = "inline";
         link.textContent = "📥 画像を保存";
-      }, 300);
+      };
+      img.src = frameOverlay.src;
     });
   </script>
 </body>
